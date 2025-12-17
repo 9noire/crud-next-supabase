@@ -17,6 +17,10 @@ import { toast } from "sonner"
 const AdminPage = () => {
     const [menus, setMenus] = useState<IMenu[]>([])
     const [createDialog, setCreateDialog] = useState(false)
+    const [selectedMenu, setSelectedMenu] = useState<{
+        menu: IMenu
+        action: "edit" | "delete"
+    } | null>(null)
 
     useEffect(() => {
         const fetchMenus = async () => {
@@ -39,14 +43,12 @@ const AdminPage = () => {
             .insert(Object.fromEntries(formData))
             .select()
 
-        if (error) {
-            console.log('error:', error)
-            toast("Failed to add menu")
-            return
-        }
+        if (error) console.log('error: ', error)
 
-        if (data) {
-            setMenus((prev) => [...prev, ...data])
+        else {
+            if (data) {
+                setMenus((prev) => [...prev, ...data])
+            }
         }
 
         toast("Menu added successfully")
@@ -55,7 +57,26 @@ const AdminPage = () => {
         console.log('error:', error)
     }
 }
-    
+
+const handleDeleteMenu = async () => {
+    if (selectedMenu) {
+         try {
+        const { data, error } = await supabase
+            .from('menus')
+            .delete()
+            .eq('id', selectedMenu?.menu.id)
+
+        if (error) console.log('error: ', error)
+        else {
+    setMenus((prev) => prev.filter((menu) => menu.id !== selectedMenu?.menu.id))
+    toast("Menu deleted successfully")
+    setSelectedMenu(null)
+        }
+    } catch (error) {
+        console.log('error:', error)
+    }
+}
+}
 
     return (
         <div className="container mx-auto py-8">
@@ -115,7 +136,7 @@ const AdminPage = () => {
                         <DialogClose>
                             <Button variant="secondary" className="cursor-pointer">Cancel</Button>
                         </DialogClose>
-                        <Button className="cursor-pointer">Create</Button>
+                        <Button type="submit" className="cursor-pointer">Create</Button>
                     </DialogFooter>
                     </form>
                 </DialogContent>
@@ -154,7 +175,7 @@ const AdminPage = () => {
                                             <DropdownMenuSeparator />
                                             <DropdownMenuGroup>
                                                 <DropdownMenuItem>Update</DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-400">Delete</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setSelectedMenu({menu, action: 'delete'})} className="text-red-400">Delete</DropdownMenuItem>
                                             </DropdownMenuGroup>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -164,6 +185,24 @@ const AdminPage = () => {
                     </TableBody>
                 </Table>
             </div>
+            <Dialog open={selectedMenu !== null && selectedMenu.action === "delete"} onOpenChange={(open) => {
+                if(!open) {
+                    setSelectedMenu(null)
+                }
+            }}>
+                <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Delete Menu</DialogTitle>
+                            <DialogDescription>Are you sure want to delete {selectedMenu?.menu.name}?</DialogDescription>
+                        </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose>
+                            <Button variant="secondary" className="cursor-pointer">Cancel</Button>
+                        </DialogClose>
+                        <Button onClick={handleDeleteMenu} className="cursor-pointer" variant="destructive">Delete</Button>
+                    </DialogFooter>
+                </DialogContent>
+                </Dialog>
         </div>
     )
 }

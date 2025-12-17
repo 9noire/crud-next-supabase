@@ -78,6 +78,30 @@ const handleDeleteMenu = async () => {
 }
 }
 
+  const handleEditMenu = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const newData = Object.fromEntries(formData)
+
+    try {
+        const { error } = await supabase
+            .from('menus')
+            .update(newData)
+            .eq('id', selectedMenu?.menu.id)
+
+        if (error) console.log('error: ', error)
+
+        else {
+            setMenus((prev) => prev.map((menu) => menu.id === selectedMenu?.menu.id ? {...menu, ...newData} : menu))
+        }
+
+        toast("Menu edit successfully")
+        setSelectedMenu(null)
+    } catch (error) {
+        console.log('error:', error)
+    }
+}
+
     return (
         <div className="container mx-auto py-8">
             <div className="mb-4 w-full flex justify-between">
@@ -128,13 +152,13 @@ const handleDeleteMenu = async () => {
                                     </Select>
                             </div>
                              <div className="grid w-full gap-1.5">
-                                <Label htmlFor="image">Descriptions</Label>
+                                <Label htmlFor="description">Descriptions</Label>
                                 <Textarea id="description" name="description" placeholder="Insert Description" required className="resize-none h-32" />
                             </div>
                         </div>
                     <DialogFooter>
                         <DialogClose>
-                            <Button variant="secondary" className="cursor-pointer">Cancel</Button>
+                            <Button variant="secondary" type="button" className="cursor-pointer">Cancel</Button>
                         </DialogClose>
                         <Button type="submit" className="cursor-pointer">Create</Button>
                     </DialogFooter>
@@ -174,7 +198,7 @@ const handleDeleteMenu = async () => {
                                             </DropdownMenuLabel>
                                             <DropdownMenuSeparator />
                                             <DropdownMenuGroup>
-                                                <DropdownMenuItem>Update</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setSelectedMenu({menu, action: 'edit'})}>Edit</DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => setSelectedMenu({menu, action: 'delete'})} className="text-red-400">Delete</DropdownMenuItem>
                                             </DropdownMenuGroup>
                                         </DropdownMenuContent>
@@ -189,7 +213,8 @@ const handleDeleteMenu = async () => {
                 if(!open) {
                     setSelectedMenu(null)
                 }
-            }}>
+            }}
+            >
                 <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                             <DialogTitle>Delete Menu</DialogTitle>
@@ -201,6 +226,75 @@ const handleDeleteMenu = async () => {
                         </DialogClose>
                         <Button onClick={handleDeleteMenu} className="cursor-pointer" variant="destructive">Delete</Button>
                     </DialogFooter>
+                </DialogContent>
+                </Dialog>
+
+        <Dialog open={selectedMenu !== null && selectedMenu.action === "edit"} onOpenChange={(open) => {
+                if(!open) {
+                    setSelectedMenu(null)
+                }
+            }}
+            >
+
+                <DialogContent className="sm:max-w-md">
+                    <form onSubmit={handleEditMenu} className="space-y-4">
+                        <DialogHeader>
+                            <DialogTitle>Edit Menu</DialogTitle>
+                            <DialogDescription>Make changes to your menu.</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid w-full gap-4">
+                            <div className="grid w-full gap-1.5">
+                                <Label htmlFor="name">Name</Label>
+                                <Input id="name" name="name" placeholder="Insert Name" required
+                                defaultValue={selectedMenu?.menu.name}
+                                />
+                            </div>
+                        </div>
+                        <div className="grid w-full gap-4">
+                            <div className="grid w-full gap-1.5">
+                                <Label htmlFor="price">Price</Label>
+                                <Input id="price" name="price" placeholder="Insert Price" required
+                                defaultValue={selectedMenu?.menu.price}/>
+                            </div>
+                        </div>
+                         <div className="grid w-full gap-4">
+                            <div className="grid w-full gap-1.5">
+                                <Label htmlFor="image">Image</Label>
+                                <Input id="image" name="image" placeholder="Insert Image" required
+                                defaultValue={selectedMenu?.menu.image}/>
+                            </div>
+                        </div>
+                         <div className="grid w-full gap-4">
+                            <div className="grid w-full gap-1.5">
+                                <Label htmlFor="category">Category</Label>
+                                <Select name="category" required
+                                defaultValue={selectedMenu?.menu.category}
+                                >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select Category"/>
+                                </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectLabel>Category</SelectLabel>
+                                            <SelectItem value="Coffee">Coffee</SelectItem>
+                                            <SelectItem value="Non Coffee">Non Coffee</SelectItem>
+                                            <SelectItem value="Food">Food</SelectItem>
+                                        </SelectGroup>
+                                    </SelectContent>
+                                    </Select>
+                            </div>
+                             <div className="grid w-full gap-1.5">
+                                <Label htmlFor="description">Descriptions</Label>
+                                <Textarea id="description" name="description" placeholder="Insert Description" required className="resize-none h-32" defaultValue={selectedMenu?.menu.description} />
+                            </div>
+                        </div>
+                    <DialogFooter>
+                        <DialogClose>
+                            <Button variant="secondary" type="button" className="cursor-pointer">Cancel</Button>
+                        </DialogClose>
+                        <Button type="submit" className="cursor-pointer">Edit</Button>
+                    </DialogFooter>
+                    </form>
                 </DialogContent>
                 </Dialog>
         </div>
